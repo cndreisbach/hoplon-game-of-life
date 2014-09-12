@@ -92,7 +92,7 @@
   (key/bind! "right" ::x-right (fn []
                                  (key-press "\u2192")
                                  (swap! ox inc)))
-  (key/bind! "space" ::space-swap #(swap! running not))
+  (key/bind! "shift-space" ::space-swap #(swap! running not))
   (key/bind! "shift-." ::next-step (fn []
                                      (when (not @running)
                                        (key-press ">>")
