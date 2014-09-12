@@ -1,0 +1,65 @@
+(page "step1.html"
+  (:require
+    [tailrecursion.hoplon.reload :refer [reload-all]]
+    [keybind :as key]))
+
+(reload-all 1000)
+
+(def grid-size 40)
+
+(defc running false)
+(defc cells #{[3 2] [4 3] [2 4] [3 4] [4 4] ; glider
+              [15 10] [16 10] [17 10] ; oscillator
+              [25 15] [26 15] [27 15] [25 16] [26 17] ; glider
+              })
+(defc last-key "")
+(defc show-key? false)
+
+(defn neighbors [[x y]]
+  (for [dx [-1 0 1] dy (if (zero? dx) [-1 1] [-1 0 1])] 
+    [(+ dx x) (+ dy y)]))
+
+(defn step [cells]
+  (set (for [[loc n] (frequencies (mapcat neighbors cells))
+             :when (or (= n 3) (and (= n 2) (cells loc)))]
+         loc)))
+
+(defn toggle-cells [pos]
+  (if (contains? @cells pos)
+    (swap! cells disj pos)
+    (swap! cells conj pos)))
+
+(defn fa [css]
+  (merge {:fa true :fa-4x true :fa-fw true} css))
+
+(with-init!
+  (key/bind! "space" ::space-swap #(swap! running not))
+
+  (with-interval 500
+    (when @running
+      (swap! cells step))))
+
+(html
+  (head
+   (link
+    :href "//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"
+    :rel "stylesheet"))
+  (body
+    (div :id "controls"
+         (div :class "control"
+              :on-click #(swap! running not)
+              (i :class (cell= (fa {:fa-pause running
+                                    :fa-play (not running)})))))
+    (div :id "last-key"
+         :do-fade-toggle show-key?
+         (text "~{last-key}"))
+    (div :id "gol"
+         (for [y (range grid-size)]
+           (div :class "row"
+                :id (str "row-" y)
+                (for [x (range grid-size)]
+                  (div
+                   :class (cell= {:cell true
+                                  :alive (contains? cells [x y])})
+                   :on-click #(when (not @running)
+                                (toggle-cells [x y])))))))))

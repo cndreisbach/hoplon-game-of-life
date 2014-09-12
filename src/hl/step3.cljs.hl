@@ -1,0 +1,136 @@
+(page "step3.html"
+  (:require
+    [tailrecursion.hoplon.reload :refer [reload-all]]
+    [gol.rpc :as rpc]
+    [keybind :as key]))
+
+(reload-all 1000)
+
+(def grid-size 40)
+
+(defc running false)
+(defc cells #{[3 2] [4 3] [2 4] [3 4] [4 4] ; glider
+              [15 10] [16 10] [17 10] ; oscillator
+              [25 15] [26 15] [27 15] [25 16] [26 17] ; glider
+              })
+(defc ox 0)
+(defc oy 0)
+(defc last-key "")
+(defc show-key? false)
+(defc current-modal nil)
+(def speed 400)
+
+(defn debounce
+  ([f] (debounce f 1000))
+  ([f timeout]
+    (let [id (atom nil)]
+      (fn [evt]
+        (js/clearTimeout @id)
+        (reset! id (js/setTimeout
+                   (partial f evt)
+                   timeout))))))
+
+(defn neighbors [[x y]]
+  (for [dx [-1 0 1] dy (if (zero? dx) [-1 1] [-1 0 1])] 
+    [(+ dx x) (+ dy y)]))
+
+(defn step [cells]
+  (set (for [[loc n] (frequencies (mapcat neighbors cells))
+             :when (or (= n 3) (and (= n 2) (cells loc)))]
+         loc)))
+
+(defn toggle-cells [pos]
+  (if (contains? @cells pos)
+    (swap! cells disj pos)
+    (swap! cells conj pos)))
+
+(def hide-key-press
+  (debounce #(reset! show-key? false) 2000))
+
+(defn key-press [key]
+  (reset! last-key key)
+  (reset! show-key? true)
+  (hide-key-press))
+
+(defn fa [css]
+  (merge {:fa true :fa-4x true :fa-fw true} css))
+
+(defn modal [modal-map]
+  (reset! current-modal (.open js/vex (clj->js modal-map))))
+
+(defn load-board []
+  (modal {"content" (div (p (strong "Boards"))
+                         (ul :id "boards"
+                             (for [[name board] @rpc/boards]
+                               (li
+                                (a :href "#"
+                                   :on-click (fn []
+                                               (reset! cells board)
+                                               (.log js/console @current-modal)
+                                               (.close js/vex (aget (.data @current-modal) "vex" "id"))
+                                               (reset! current-modal nil))
+                                   name)))))}))
+
+(defn save-board []
+  (.prompt js/vex.dialog (clj->js {:message "What name do you want to give this board?"
+                                   :placeholder "Board name"
+                                   :callback (fn [name]
+                                               (when name
+                                                 (rpc/save-board name @cells)))})))
+
+(with-init!
+  (rpc/init)
+  (key/bind! "up" ::y-up (fn []
+                           (key-press "\u2191")
+                           (swap! oy dec)))
+  (key/bind! "down" ::y-down (fn []
+                               (key-press "\u2193")
+                               (swap! oy inc)))
+  (key/bind! "left" ::x-left (fn []
+                               (key-press "\u2190")
+                               (swap! ox dec)))
+  (key/bind! "right" ::x-right (fn []
+                                 (key-press "\u2192")
+                                 (swap! ox inc)))
+  (key/bind! "space" ::space-swap #(swap! running not))
+  (key/bind! "shift-." ::next-step (fn []
+                                     (when (not @running)
+                                       (key-press ">>")
+                                       (swap! cells step))))
+  
+  (aset js/vex.defaultOptions "className" "vex-theme-default")
+
+  (with-interval speed
+    (when @running
+      (swap! cells step))))
+
+(html
+  (head
+   (link
+    :href "//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"
+    :rel "stylesheet"))
+  (body
+   (div :id "controls"
+        (a :class "control"
+           :on-click #(swap! running not)
+           (i :class (cell= (fa {:fa-pause running
+                                 :fa-play (not running)}))))
+        (a :class "control"
+           :on-click #(save-board)
+           (i :class (cell= (fa {:fa-save true}))))
+        (a :class "control"
+           :on-click #(load-board)
+           (i :class (cell= (fa {:fa-folder-open true})))))
+    (div :id "last-key"
+         :do-fade-toggle show-key?
+         (text "~{last-key}"))
+    (div :id "gol"
+         (for [y (range grid-size)]
+           (div :class "row"
+                :id (str "row-" y)
+                (for [x (range grid-size)]
+                  (div
+                   :class (cell= {:cell true
+                                  :alive (contains? cells [(+ x ox) (+ y oy)])})
+                   :on-click #(when (not @running)
+                                (toggle-cells [(+ x @ox) (+ y @oy)])))))))))
