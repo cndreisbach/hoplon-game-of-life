@@ -1,5 +1,6 @@
-@import "vex.css";
-@import "vex-theme-default.css";
+@import "css/vex.css";
+@import "css/vex-theme-default.css";
+@import "css/font-awesome.min.css";
 
 * {
   -moz-box-sizing: border-box;
@@ -52,7 +53,7 @@ body {
   left: 0;
   bottom: 0;
   right: 0;
-  background-color: #EFEFEF;
+  background-color: #FFFECC;
   overflow: hidden;
   margin-top: -1.5%;
   margin-left: -1.5%;
@@ -63,7 +64,7 @@ body {
 }
 
 .cell {
-  border: 1px dotted #999;
+  border: 1px dotted #9DA9C4;
   float: left;
   width: 2.5%;
   margin: 0;
@@ -72,7 +73,7 @@ body {
 }
 
 .alive {
-  background-color: blue;
+  background-color: #FF6161;
 }
 
 .r {background-color: red;}
