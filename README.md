@@ -1,6 +1,6 @@
 # gol
 
-A Hoplon project with Castra designed to...well, that part is up to you.
+A Hoplon project with Castra designed to run Conway's Game of Life.
 
 ## Dependencies
 
@@ -16,16 +16,13 @@ A Hoplon project with Castra designed to...well, that part is up to you.
     $ boot development
     ```
 
-2. Go to [http://localhost:8000][3] in your browser. You should see "Hello,
-Hoplon and Castra!" with random numbers that are generated on the server and
-transmited to the client. But you should change that to what you want.
+2. Go to [http://localhost:8000/step1.html][] in your browser. You should see Conway's Game of Life. Go to `step2.html` and `step3.html` to see more advanced versions.
 
 3. You're already done.
 
 ## License
 
-Copyright © 2014, **Your Name Goes Here**
+Copyright © 2014, Clinton Dreisbach
 
 [1]: https://github.com/tailrecursion/boot
 [2]: https://github.com/technomancy/leiningen
-[3]: http://localhost:8000
